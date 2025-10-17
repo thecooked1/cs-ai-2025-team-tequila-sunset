@@ -1,34 +1,49 @@
+
 # Team Contract
 
 **Course:** Building AI-Powered Applications
+
 **Team Name:** Tequila Sunset
-**Project:** 
-**Date :** 
+
+**Project:** ATLAS
+ 
+**Date :** 10/17/2025
 
 
 ## Team Members
 
 | Name     | Email   |Github Username| Primary Role|
 | -------- | ------- |---------------|-------
-|Ioane Chanturia |chanturia.ioane@kiu.edu.ge | thecooked1| *|
-|Davit Datunashvili | datunashvili.davit@kiu.edu.ge     | XXIDreadKnight |  * |
-|Nikoloz Tepnadze    | tepnadze.nikoloz@kiu.edu.ge    |Swopa |*|
+|Ioane Chanturia |chanturia.ioane@kiu.edu.ge | thecooked1| Backend Lead|
+|Davit Datunashvili | datunashvili.davit@kiu.edu.ge     | XXIDreadKnight |  UI/UX Designer |
+|Nikoloz Tepnadze    | tepnadze.nikoloz@kiu.edu.ge    |Swopa |AI Integration |
 
 
 
 
 ## Team Mission & Goals
-**Our Mission** : [1-2 sentences describing what you want to achieve together]
+**Our Mission** :  We aim to create a seamless collaborative AI that augments human imagination, making the process of building complex narratives and interactive experiences intuitive and accessible.
  
  **Our Goals for This Semester :** 
- 1. [Specific, measurable goal 1]
- 2. [Specific, measurable goal 2]
- 3. [Specific, measurable goal 3]
+ 1.  **Develop a functional prototype** that demonstrates the core AI-powered creative tools.
+    
+2.  **Design and validate an intuitive user experience** based on direct feedback from target users.
+    
+3.  **Build a stable technical foundation** to support the application's core features and user data.
 
 ## Roles & Responsibilities
 
 ### Primary Roles
-**Ioane Chanturia - [Role Title]** 
+**Ioane Chanturia - Backend Lead** 
+
+ -  Responsibilities:
+    -   Design and build the server-side application logic and the core API that the user interface will communicate with.
+    -    Implement and manage the database schema for storing all user data, including accounts, saved campaigns, and generated content.
+    -    Set up user authentication, ensure data security, and manage the deployment and scaling of the server infrastructure.
+ 
+ Accountable for: The overall stability, performance, and security of the entire application's backend infrastructure, ensuring that data is managed safely and the application can handle user load.
+
+**Davit Datunashvili - UI/UX Designer** 
 
  -   Responsibilities:
     -   [Specific responsibility 1]
@@ -36,15 +51,7 @@
     -   [Specific responsibility 3]
 -   Accountable for: [What they're ultimately responsible for]
 
-**Davit Datunashvili - [Role Title]** 
-
- -   Responsibilities:
-    -   [Specific responsibility 1]
-    -   [Specific responsibility 2]
-    -   [Specific responsibility 3]
--   Accountable for: [What they're ultimately responsible for]
-
-**Nikoloz Tepnadze - [Role Title]** 
+**Nikoloz Tepnadze - AI Integration** 
 
  -   Responsibilities:
     -   [Specific responsibility 1]
@@ -87,7 +94,7 @@ All team members are equally responsible for:
 
 **If Someone Can't Attend:**
 
--   Notify team at least [X] hours in advance
+-   Notify team at least 3-4 hours in advance
 -   Review meeting notes within 24 hours
 -   Complete any assigned action items
 
@@ -98,12 +105,12 @@ All team members are equally responsible for:
 
  - Platform: GitHub
  - Branch Strategy: main + feature branches
- - Commit Message Format: Fix: ... , feat:...
+ - Commit Message Format: fix: ... , feat:..., docs:...,
 
 **Code Review Process:**
 
- - [ ] All PRs require at least [1/2] approval(s)
- - [ ] PRs should be reviewed within [24/48] hours
+ - [ ] All PRs require at least 2 approval(s)
+ - [ ] PRs should be reviewed within 48 hours
  - [ ] Include tests with new features
  - [ ] Update documentation for significant changes
 
@@ -122,7 +129,7 @@ We will track contributions through:
  - [ ] Peer evaluation forms (mid-term and final)
 
 **Expected Contribution:**
-Each team member should contribute approximately [x] hours per week.
+Each team member should contribute approximately 24 hours per week.
 
 ## Decision-Making process
 
@@ -289,7 +296,7 @@ Amendment History:
 
 By signing below, we agree to uphold this contract and work together professionally and respectfully.
 
-**Ioane Chanturia**
+**Ioane Chanturia**  
 Signature: ___________________________ Date: _______________
 
 **Davit Datunashvili**  
@@ -313,5 +320,4 @@ If signing digitally, each team member should:
 
 **Note:** This contract is a living document. Revisit it at mid-term to ensure it's still serving your team well.
  
-
 
