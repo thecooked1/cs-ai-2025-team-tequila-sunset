@@ -301,8 +301,8 @@ By signing below, we agree to uphold this contract and work together professiona
 **Davit Datunashvili**  
 Signature: ___________________________ Date: _______________
 
-**Nikoloz Tepnadze**
-Signature: ___________________________ Date: _______________
+**Nikoloz Tepnadze** agreed on 10/17/2025
+
 
 
 
