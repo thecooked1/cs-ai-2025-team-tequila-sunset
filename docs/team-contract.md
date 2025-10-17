@@ -296,8 +296,7 @@ Amendment History:
 
 By signing below, we agree to uphold this contract and work together professionally and respectfully.
 
-**Ioane Chanturia**  
-Signature: ___________________________ Date: _______________
+**Ioane Chanturia** agreed on 10/17/2025
 
 **Davit Datunashvili**  
 Signature: ___________________________ Date: _______________
