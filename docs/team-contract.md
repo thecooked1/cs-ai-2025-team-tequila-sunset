@@ -298,8 +298,7 @@ By signing below, we agree to uphold this contract and work together professiona
 
 **Ioane Chanturia** agreed on 10/17/2025
 
-**Davit Datunashvili**  
-Signature: ___________________________ Date: _______________
+**Davit Datunashvili** agreed on 10/31/2025
 
 **Nikoloz Tepnadze** agreed on 10/17/2025
 
