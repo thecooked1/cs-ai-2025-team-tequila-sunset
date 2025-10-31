@@ -1,9 +1,10 @@
 # Token Usage & Cost Model (Version 2)
 
-**Project Name:** ATLAS: A Conversational AI Assistant for Dungeon Masters
-**Team Members:** [Member 1 Name], [Member 2 Name], [Member 3 Name]
-**Date:** Week 4, [Date]
-**Version:** 2.0 (Updated with Week 3-4 actual data)
+Project Name: ATLAS: A Conversational AI Assistant for Dungeon Masters
+
+Team Members: Ioane Chanturia, Nikoloz Tepnadze, Davit Datunashvili
+
+Date: Week 4, 31/10/2025 Version: 2.0
 
 ---
 
