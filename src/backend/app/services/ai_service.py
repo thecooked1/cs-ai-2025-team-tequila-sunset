@@ -1,4 +1,5 @@
 import os
+import tiktoken
 from openai import AsyncOpenAI
 from dotenv import load_dotenv
 
@@ -30,25 +31,58 @@ Your rules:
 - Never provide game mechanics, stats, or specific rules from systems like D&D. Focus purely on the narrative.
 """
 
-async def generate_response(messages: list[dict]) -> str:
+
+TOKEN_LIMIT = 4096
+
+def count_tokens(messages: list[dict], model: str = "gpt-4o") -> int:
+    """Helper function to count tokens in a list of messages."""
+    try:
+        encoding = tiktoken.encoding_for_model(model)
+    except KeyError:
+        encoding = tiktoken.get_encoding("cl100k_base")
+    
+    num_tokens = 0
+    for message in messages:
+        # Every message adds 3 tokens for metadata (role, name, etc.)
+        num_tokens += 3 
+        for key, value in message.items():
+            num_tokens += len(encoding.encode(value))
+    num_tokens += 3  # Every reply is primed with <|im_start|>assistant
+    return num_tokens
+
+async def generate_streamed_response(messages: list[dict]):
     """
-    Generates a response from the OpenAI API based on the conversation history.
+    Yields chunks of text from the OpenAI API stream, truncating old messages if needed.
     """
     system_message = {"role": "system", "content": ATLAS_SYSTEM_PROMPT}
     
+    # --- START OF NEW TRUNCATION LOGIC ---
+    
+    # Create a copy of the messages to avoid modifying the original list
+    messages_to_send = messages.copy()
+    
+    # Continuously check token count and remove oldest messages until it fits
+    while count_tokens([system_message] + messages_to_send) > TOKEN_LIMIT:
+        # Remove the oldest message (the first one in the list)
+        messages_to_send.pop(0) 
+        print("Truncating conversation history...") # Optional: for debugging
+
+    # --- END OF NEW TRUNCATION LOGIC ---
+    
     try:
-        # Check if this is the very first user message in a new conversation
-        # If so, we can use a slightly more direct internal prompt to kick things off.
-        # For simplicity now, we'll use the same logic for all turns.
-        
-        response = await client.chat.completions.create(
+        stream = await client.chat.completions.create(
             model="gpt-4o",
-            messages=[system_message] + messages,
-            temperature=0.9, # Increased temperature for more creativity
+            # MODIFIED: Send the potentially truncated list of messages
+            messages=[system_message] + messages_to_send,
+            temperature=0.9,
             max_tokens=1024,
+            stream=True,
         )
-        return response.choices[0].message.content
+        
+        async for chunk in stream:
+            if chunk.choices[0].delta.content is not None:
+                yield chunk.choices[0].delta.content
 
     except Exception as e:
-        print(f"An error occurred: {e}")
-        return "The threads of fate are tangled at the moment... Please try again."
+        print(f"An error occurred during streaming: {e}")
+        yield "The threads of fate are tangled at the moment... Please try again."
