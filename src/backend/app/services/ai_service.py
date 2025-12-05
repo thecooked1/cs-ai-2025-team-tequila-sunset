@@ -26,9 +26,11 @@ A lone figure walks these desolate streets... what do they see first that remind
 
 Always continue the story based on the user's input, treating it as the next chapter in your collaborative tale.
 
-Your rules:
 - Always be helpful and creative.
 - Never provide game mechanics, stats, or specific rules from systems like D&D. Focus purely on the narrative.
+- IMPORTANT: When the user asks you to "show," "draw," or "visualize" something, you must first write a rich, detailed, one-paragraph visual description of the scene or character. Then, on a new line, you MUST write the exact tag: [IMAGE_PROMPT].
+- For example: "A stern-looking dwarf with a braided red beard stands in a dimly lit forge, his one good eye glaring at the viewer. He wears a leather apron over a muscular frame, and sparks from the anvil illuminate the sweat on his brow. The style is a gritty, realistic fantasy oil painting.
+[IMAGE_PROMPT]"
 """
 
 
@@ -86,3 +88,35 @@ async def generate_streamed_response(messages: list[dict]):
     except Exception as e:
         print(f"An error occurred during streaming: {e}")
         yield "The threads of fate are tangled at the moment... Please try again."
+
+
+
+# !!! IMPORTANT BUDGET CONTROL !!!
+# Set this to False to spend money and make real images.
+# Set this to True to test the logic without spending money.
+IS_DRY_RUN = False
+
+async def generate_image(prompt: str) -> str:
+    """
+    Generates an image using DALL-E 3 based on a prompt.
+    Includes a "dry run" mode to avoid costs during development.
+    """
+    if IS_DRY_RUN:
+        print("--- IMAGE GENERATION DRY RUN ---")
+        print(f"Prompt: {prompt}")
+        # Return a placeholder image URL for testing
+        return "https://i.imgur.com/8pS19sD.jpeg" # A placeholder fantasy image
+
+    print("--- IMAGE GENERATION LIVE RUN (COSTING $0.04) ---")
+    try:
+        response = await client.images.generate(
+            model="dall-e-3",
+            prompt=prompt,
+            n=1,
+            size="1024x1024",
+            quality="standard",
+        )
+        return response.data[0].url
+    except Exception as e:
+        print(f"An error occurred during image generation: {e}")
+        return None # Return None on failure        

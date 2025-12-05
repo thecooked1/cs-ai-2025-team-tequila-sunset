@@ -7,3 +7,6 @@ class ChatMessage(BaseModel):
 
 class ChatRequest(BaseModel):
     messages: List[ChatMessage]
+
+class ImageRequest(BaseModel):
+    prompt: str    
