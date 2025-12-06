@@ -429,3 +429,13 @@ body {
   border: 3px solid #5d4037;
   object-fit: cover;
 }
+
+.book-image {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin-top: 15px;
+  border-radius: 5px;
+  border: 2px solid #5c4033; /* Dark brown border for that "book" feel */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import './App.css';
 import WorldBook from './components/WorldBook';
 import PromptCorner from './components/PromptCorner';
@@ -6,56 +6,145 @@ import CharacterSheet from './components/CharacterSheet';
 import DiceTray from './components/DiceTray';
 import CharacterModal from './components/CharacterModal';
 
-// --- MOCK DATA FOR DEMO ---
-const MOCK_AI_RESPONSE_TEXT = "The ancient city of Aeridor sleeps beneath the waves. Its once-great spires are now encrusted with coral, and schools of shimmering fish dart through the silent throne room. A faint, magical ward still pulses from the city's heart, protecting a secret lost to time.";
-const MOCK_AI_RESPONSE_IMAGE = {
-  text: "You encounter a grizzled dwarven warrior. He looks battle-worn, but his eyes are sharp.",
-  imageUrl: "https://i.imgur.com/64IuA8V.jpeg" // Our placeholder knight
-};
-// --- END MOCK DATA ---
+// API Configuration
+const API_URL_CHAT = "http://localhost:8000/api/chat";
+const API_URL_IMAGE = "http://localhost:8000/api/image";
 
 function App() {
+  // State for the conversation history
   const [bookContent, setBookContent] = useState([
-    { role: 'assistant', content: 'Welcome to ATLAS. Your story begins...' }
+    { role: 'assistant', content: 'Welcome to ATLAS. I am the First Narrator. What world shall we build today?' }
   ]);
-  const [character, setCharacter] = useState({
-    name: "Lyra Swiftwind",
-    // NEW: Add a description for the character
-    description: "A nimble rogue with a quick wit and even quicker fingers. Lyra hails from the treetop city of Silverwood, but left in search of adventure and fortune after a dispute with the local thieves' guild. She trusts few, but is fiercely loyal to those who earn it.",
-    stats: { STR: 10, DEX: 18, CON: 12, INT: 14, WIS: 16, CHA: 14 },
-    picture: "https://i.imgur.com/example-character.png", // Use a real image URL here
-    // NEW: Change inventory to an array of objects
-    inventory: [
-      { name: "Dagger", description: "A simple but sharp blade, well-cared for." },
-      { name: "Thieves' Tools", description: "A set of lockpicks, wires, and small mirrors." },
-      { name: "Rope (50ft)", description: "Coiled silk rope, strong and light." },
-      { name: "Health Potion", description: "A swirling red liquid in a glass vial. Heals minor wounds." }
-    ]
-  });
+  
+  // State for UI (Loading, Modal, etc)
+  const [isLoading, setIsLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const handlePromptSubmit = (prompt) => {
-    // Add user's prompt to the book
+  // Placeholder Character Data (You can connect this to AI later!)
+  const [character, setCharacter] = useState({
+    name: "Lyra Swiftwind",
+    description: "A nimble rogue with a quick wit...",
+    stats: { STR: 10, DEX: 18, CON: 12, INT: 14, WIS: 16, CHA: 14 },
+    inventory: [
+      { name: "Dagger", description: "Sharp and reliable." },
+      { name: "Rope", description: "50ft of silk rope." }
+    ]
+  });
+
+  // --- HELPER: Generate Image ---
+  const generateImage = async (prompt) => {
+    try {
+      const response = await fetch(API_URL_IMAGE, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt }),
+      });
+      const data = await response.json();
+      
+      // Update the last message to include the image URL
+      setBookContent(currentContent => {
+        const newContent = [...currentContent];
+        const lastMsg = newContent[newContent.length - 1];
+        // Remove the prompt tag and add the image URL
+        lastMsg.content = lastMsg.content.replace('[IMAGE_PROMPT]', '').trim();
+        lastMsg.imageUrl = data.imageUrl;
+        return newContent;
+      });
+
+    } catch (error) {
+      console.error("Error generating image:", error);
+    }
+  };
+
+  // --- MAIN FUNCTION: Handle User Input ---
+  const handlePromptSubmit = async (prompt) => {
+    if (!prompt.trim() || isLoading) return;
+
+    // 1. Add User Message immediately
     const userEntry = { role: 'user', content: prompt };
+    // 2. Add Placeholder Assistant Message (empty for now)
+    const placeholderEntry = { role: 'assistant', content: '' };
+    
+    // Update state with both
+    setBookContent(prev => [...prev, userEntry, placeholderEntry]);
+    setIsLoading(true);
 
-    // Simulate an AI response
-    // In a real app, this would come from an API
-    const aiEntry = prompt.toLowerCase().includes('image')
-      ? { role: 'assistant', content: MOCK_AI_RESPONSE_IMAGE.text, imageUrl: MOCK_AI_RESPONSE_IMAGE.imageUrl }
-      : { role: 'assistant', content: MOCK_AI_RESPONSE_TEXT };
+    try {
+      // 3. Make the API Call to Backend
+      // Note: We filter out the last empty placeholder before sending context
+      const contextMessages = [...bookContent, userEntry].map(msg => ({
+        role: msg.role,
+        content: msg.content || "" // Ensure content isn't null
+      }));
 
-    setBookContent(prevContent => [...prevContent, userEntry, aiEntry]);
+      const response = await fetch(API_URL_CHAT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: contextMessages }),
+      });
+
+      if (!response.body) throw new Error("No response body");
+
+      // 4. Handle Streaming Response
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let done = false;
+      let fullResponse = '';
+
+      while (!done) {
+        const { value, done: readerDone } = await reader.read();
+        done = readerDone;
+        const chunk = decoder.decode(value, { stream: true });
+        fullResponse += chunk;
+
+        // Update the last message (the placeholder) with the new chunk
+        setBookContent(currentContent => {
+          const newContent = [...currentContent];
+          const lastMsg = newContent[newContent.length - 1];
+          lastMsg.content = fullResponse;
+          return newContent;
+        });
+      }
+
+      // 5. Check for Image Prompt Tag
+      if (fullResponse.includes('[IMAGE_PROMPT]')) {
+        // Show temporary status
+        setBookContent(currentContent => {
+            const newContent = [...currentContent];
+            const lastMsg = newContent[newContent.length - 1];
+            lastMsg.content = lastMsg.content.replace('[IMAGE_PROMPT]', '\n\n*Summoning image...*');
+            return newContent;
+        });
+        
+        // Extract prompt and call image API
+        const imagePrompt = fullResponse.split('[IMAGE_PROMPT]')[0].trim();
+        await generateImage(imagePrompt);
+      }
+
+    } catch (error) {
+      console.error("Error:", error);
+      setBookContent(prev => {
+        const newContent = [...prev];
+        const lastMsg = newContent[newContent.length - 1];
+        lastMsg.content += "\n\n[System Error: Connection to ATLAS lost.]";
+        return newContent;
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className="dm-dashboard">
+      {/* Pass the dynamic content to the WorldBook */}
       <WorldBook content={bookContent} />
-      <PromptCorner onSubmit={handlePromptSubmit} />
-      {/* --- UPDATE THIS COMPONENT'S PROPS --- */}
+      
+      {/* Pass the API handler to the PromptCorner */}
+      <PromptCorner onSubmit={handlePromptSubmit} isLoading={isLoading} />
+      
+      {/* Keep the other UI components */}
       <CharacterSheet character={character} onOpenModal={() => setIsModalOpen(true)} />
       <DiceTray />
-
-      {/* --- ADD THIS CONDITIONAL RENDER FOR THE MODAL --- */}
       {isModalOpen && <CharacterModal character={character} onClose={() => setIsModalOpen(false)} />}
     </div>
   );
