@@ -5,10 +5,10 @@ const API_URL_CHAT = "http://localhost:8000/api/chat";
 const API_URL_IMAGE = "http://localhost:8000/api/image";
 
 function App() {
-  // A message can now have text content, an image URL, or both.
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [copiedIndex, setCopiedIndex] = useState(null);
   const chatWindowRef = useRef(null);
 
   useEffect(() => {
@@ -17,8 +17,36 @@ function App() {
     }
   }, [messages]);
 
-  // NEW: A separate function to handle the image generation call
+  // --- NEW: Function to handle copying text ---
+  const handleCopy = (text, index) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedIndex(index);
+      setTimeout(() => setCopiedIndex(null), 2000);
+    });
+  };
+
+  // --- NEW: Function to handle downloading an image ---
+  const handleDownload = async (imageUrl) => {
+    try {
+      // Fetch the image data
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      
+      // Create a temporary link element to trigger the download
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `atlas-generated-${Date.now()}.png`; // Set a filename
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href); // Clean up the object URL
+    } catch (error) {
+      console.error("Failed to download image:", error);
+    }
+  };
+
   const generateImage = async (prompt) => {
+    // ... (This function remains the same as before)
     try {
       const response = await fetch(API_URL_IMAGE, {
         method: 'POST',
@@ -27,76 +55,56 @@ function App() {
       });
       const data = await response.json();
       
-      // Update the last message to include the new image URL
       setMessages(currentMessages => {
         const lastMessage = currentMessages[currentMessages.length - 1];
         const updatedLastMessage = { ...lastMessage, imageUrl: data.imageUrl, content: lastMessage.content.replace('[IMAGE_PROMPT]', '').trim() };
         return [...currentMessages.slice(0, -1), updatedLastMessage];
       });
-
     } catch (error) {
       console.error("Error generating image:", error);
-       setMessages(currentMessages => {
-        const lastMessage = currentMessages[currentMessages.length - 1];
-        const updatedLastMessage = { ...lastMessage, content: lastMessage.content + "\n\n[Sorry, I couldn't generate the image.]" };
-        return [...currentMessages.slice(0, -1), updatedLastMessage];
-      });
     }
   };
 
-
   const sendMessage = async (e) => {
+    // ... (This function remains the same as before)
     e.preventDefault();
     if (!input.trim() || isLoading) return;
-
     const userMessage = { role: 'user', content: input };
     const newMessages = [...messages, userMessage, { role: 'assistant', content: '' }];
-    
     setMessages(newMessages);
     setInput('');
     setIsLoading(true);
-
     try {
       const response = await fetch(API_URL_CHAT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: [...messages, userMessage] }),
       });
-
       if (!response.body) return;
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let done = false;
       let fullResponse = '';
-
       while (!done) {
         const { value, done: readerDone } = await reader.read();
         done = readerDone;
         const chunk = decoder.decode(value);
         fullResponse += chunk;
-
         setMessages(currentMessages => {
           const lastMessage = currentMessages[currentMessages.length - 1];
           const updatedLastMessage = { ...lastMessage, content: fullResponse };
           return [...currentMessages.slice(0, -1), updatedLastMessage];
         });
       }
-      
-      // *** NEW LOGIC ***
-      // After the stream is finished, check for the image prompt tag
       if (fullResponse.includes('[IMAGE_PROMPT]')) {
-        // We'll show a temporary message while the image generates
         setMessages(currentMessages => {
             const lastMessage = currentMessages[currentMessages.length - 1];
             const updatedLastMessage = { ...lastMessage, content: lastMessage.content.replace('[IMAGE_PROMPT]', '\n\nGenerating image...') };
             return [...currentMessages.slice(0, -1), updatedLastMessage];
         });
-        
-        // Extract the prompt (the text before the tag) and call the image API
         const imagePrompt = fullResponse.split('[IMAGE_PROMPT]')[0].trim();
         await generateImage(imagePrompt);
       }
-
     } catch (error) {
       console.error("Error fetching AI response:", error);
     } finally {
@@ -108,14 +116,27 @@ function App() {
     <div className="chat-container">
       <div className="chat-window" ref={chatWindowRef}>
         {messages.map((msg, index) => (
+          // --- UPDATED: A wrapper to hold the message and actions ---
           <div key={index} className={`message-wrapper ${msg.role}`}>
             <div className={`message ${msg.role}`}>
-              {/* Conditionally render text content if it exists */}
               {msg.content && <p>{msg.content}</p>}
-              
-              {/* Conditionally render the image if the URL exists */}
               {msg.imageUrl && <img src={msg.imageUrl} alt="Generated by ATLAS" className="generated-image" />}
             </div>
+            {/* --- NEW: The actions bar --- */}
+            {msg.role === 'assistant' && !isLoading && (msg.content || msg.imageUrl) && (
+              <div className="message-actions">
+                {msg.content && (
+                  <button onClick={() => handleCopy(msg.content, index)} className="action-btn">
+                    {copiedIndex === index ? 'Copied!' : 'Copy Text'}
+                  </button>
+                )}
+                {msg.imageUrl && (
+                  <button onClick={() => handleDownload(msg.imageUrl)} className="action-btn">
+                    Download Image
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         ))}
       </div>

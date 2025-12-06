@@ -87,3 +87,43 @@ body {
   border-radius: 10px;
   margin-top: 10px;
 }
+
+/* A wrapper to align the message and its actions */
+.message-wrapper {
+  display: flex;
+  flex-direction: column;
+  max-width: 75%;
+}
+.message-wrapper.user { align-self: flex-end; }
+.message-wrapper.assistant { align-self: flex-start; }
+
+/* The actions bar itself */
+.message-actions {
+  padding-left: 10px;
+  padding-top: 5px;
+  opacity: 0; /* Hidden by default */
+  transition: opacity 0.2s ease-in-out;
+  display: flex;
+  gap: 5px;
+}
+
+/* Show the actions bar when hovering over the wrapper */
+.message-wrapper:hover .message-actions {
+  opacity: 1;
+}
+
+/* The style for the small action buttons */
+.action-btn {
+  background: #444;
+  border: 1px solid #666;
+  color: #ddd;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 3px 8px;
+  transition: background-color 0.2s;
+}
+
+.action-btn:hover {
+  background: #555;
+}
