@@ -1,129 +1,431 @@
+/* --- 1. FONTS & THEME --- */
+@import url('https://fonts.googleapis.com/css2?family=MedievalSharp&family=Cinzel:wght@400;700&display=swap');
+
 body {
-  font-family: sans-serif;
-  background-color: #282c34;
-  color: white;
+  /* A dark stone texture would be great here */
+  background-color: #1a1a1a;
+  background-image: url('https://www.transparenttextures.com/patterns/dark-stone-wall.png');
+  color: #363636; /* Dark ink color */
+  font-family: 'Cinzel', serif;
   margin: 0;
+}
+
+.dm-dashboard {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  grid-template-rows: 60vh 40vh;
+  height: 100vh;
+  width: 100vw;
+  gap: 15px;
+  padding: 15px;
+  box-sizing: border-box;
+}
+
+.quadrant {
+  border: 3px solid #5d4037; /* Leather border */
+  border-radius: 8px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(0, 0, 0, 0.4);
+  padding: 20px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.quadrant h2 {
+  font-family: 'MedievalSharp', cursive;
+  font-size: 2em;
+  margin-top: 0;
+  color: #daa520; /* Gold accent */
+  text-align: center;
+  border-bottom: 2px solid #5d4037;
+  padding-bottom: 10px;
+  margin-bottom: 15px;
+}
+
+/* --- 2. WORLD JOURNAL (THE BOOK) --- */
+.world-book {
+  background-color: #fdf5e6; /* Parchment */
+  background-image: url('https://www.transparenttextures.com/patterns/old-parchment.png');
+  border-image: url('path-to-ornate-border.png') 30 stretch; /* For a truly fancy look */
+}
+
+.world-book .book-content {
+  overflow-y: auto;
+  padding-right: 15px;
+}
+
+.book-entry { margin-bottom: 1.5em; line-height: 1.6; }
+.entry-label { font-family: 'MedievalSharp', cursive; color: #8c7853; }
+.book-image { max-width: 80%; border: 5px solid #c9a87c; border-radius: 3px; margin: 1em auto; display: block; }
+
+/* --- 3. PROMPT CORNER --- */
+.prompt-corner { background: #3e2723; border-color: #2d1c18;}
+.prompt-corner textarea {
+  flex-grow: 1;
+  background-color: #fdf5e6; /* Parchment inside */
+  color: #363636;
+  border: 2px solid #5d4037;
+  border-radius: 4px;
+  padding: 10px;
+  font-size: 16px;
+  resize: none;
+  margin-bottom: 10px;
+  font-family: 'Cinzel', serif;
+}
+.prompt-corner button {
+  padding: 12px;
+  background-color: #daa520;
+  border: 1px solid #b8860b;
+  color: #363636;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: 'MedievalSharp', cursive;
+  font-size: 1.2em;
+}
+
+/* --- 4. CHARACTER SHEET --- */
+.character-sheet { background-color: #ece5d8; }
+.char-info h3 { font-family: 'MedievalSharp', cursive; font-size: 1.8em; margin: 0; }
+/* ... (rest of character sheet styles from before can be tweaked) ... */
+
+/* --- 5. DICE TRAY & 3D DICE --- */
+.dice-tray {
+  background-image: url('https://www.transparenttextures.com/patterns/wood-pattern.png'); /* Wood texture */
+  align-items: center;
+  justify-content: center;
+  gap: 30px;
+}
+
+.dice-result { font-size: 3em; color: #fdf5e6; text-shadow: 2px 2px #363636; }
+.dice-container {
+  width: 100px;
+  height: 100px;
+  perspective: 1000px; /* This creates the 3D space */
+}
+
+.die {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 1s; /* The roll animation duration */
+}
+
+.die.rolling {
+  /* The animation will be handled by JavaScript */
+}
+
+.face {
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  border: 2px solid #363636;
+  background: rgba(253, 245, 230, 0.9); /* Translucent Parchment */
+  font-size: 40px;
+  font-weight: bold;
+  color: #363636;
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
 }
 
-.chat-container {
-  width: 80%;
-  max-width: 800px;
-  height: 90vh;
-  border: 1px solid #444;
-  border-radius: 8px;
+/* Positioning each face of the 3D cube */
+.front  { transform: rotateY(  0deg) translateZ(50px); }
+.back   { transform: rotateY(180deg) translateZ(50px); }
+.right  { transform: rotateY( 90deg) translateZ(50px); }
+.left   { transform: rotateY(-90deg) translateZ(50px); }
+.top    { transform: rotateX( 90deg) translateZ(50px); }
+.bottom { transform: rotateX(-90deg) translateZ(50px); }
+
+/* --- LAYOUT FIXES & ADDITIONS --- */
+
+/* 1. Fix for Squished Prompt Corner */
+.prompt-corner form {
   display: flex;
   flex-direction: column;
-  background-color: #333;
+  flex-grow: 1; /* Allows the form to fill the space */
+}
+.prompt-corner textarea {
+  flex-grow: 1; /* Allows the textarea to fill the form */
 }
 
-.chat-window {
-  flex-grow: 1;
-  overflow-y: auto;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
+/* 2. Fix for Messed Up Character Sheet */
+.character-sheet {
   gap: 15px;
+  overflow-y: auto;
 }
-
-.message {
-  padding: 10px 15px;
-  border-radius: 18px;
-  max-width: 70%;
-  line-height: 1.4;
-}
-
-.message.user {
-  background-color: #007bff;
-  color: white;
-  align-self: flex-end;
-  border-bottom-right-radius: 4px;
-}
-
-.message.assistant {
-  background-color: #555;
-  color: white;
-  align-self: flex-start;
-  border-bottom-left-radius: 4px;
-}
-
-.chat-input-form {
+.character-main {
   display: flex;
-  padding: 10px;
-  border-top: 1px solid #444;
+  gap: 15px;
+  align-items: center;
 }
-
-.chat-input-form input {
+.char-picture {
+  width: 100px;
+  height: 100px;
+  border-radius: 8px; /* Square portrait often looks better */
+  object-fit: cover;
+  border: 3px solid #5d4037;
+  flex-shrink: 0;
+}
+.char-info {
   flex-grow: 1;
+}
+.char-info h3 {
+  font-family: 'MedievalSharp', cursive;
+  font-size: 1.8em;
+  margin: 0 0 10px 0;
+  color: #363636;
+}
+.char-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.stat-box {
+  text-align: center;
+  background-color: #d7cec0;
+  padding: 5px;
+  border-radius: 4px;
+  border: 1px solid #c9a87c;
+}
+.stat-name {
+  font-size: 0.8em;
+  color: #5d4037;
+  font-weight: bold;
+}
+.stat-value {
+  font-size: 1.5em;
+  font-weight: bold;
+  color: #363636;
+}
+.char-inventory {
+  flex-grow: 1;
+  background: #d7cec0;
   padding: 10px;
-  border-radius: 20px;
-  border: 1px solid #555;
-  background-color: #444;
-  color: white;
-  font-size: 16px;
+  border-radius: 4px;
+  overflow: visible; 
+}
+.char-inventory h4 { margin: 0 0 10px 0; }
+.char-inventory ul { list-style-type: none; padding: 0; margin: 0; }
+.char-inventory li {
+  background-color: #fdf5e6;
+  padding: 8px;
+  border-radius: 3px;
+  margin-bottom: 5px;
+  border-left: 3px solid #daa520;
 }
 
-.chat-input-form button {
-  padding: 10px 20px;
-  margin-left: 10px;
-  border-radius: 20px;
-  border: none;
-  background-color: #007bff;
-  color: white;
+/* 3. New Dice Tray Styles */
+.dice-tray {
+  background-image: url('https://www.transparenttextures.com/patterns/wood-pattern.png'); /* Wood texture */
+  align-items: center;
+  justify-content: center;
+  gap: 30px;
+}
+
+.dice-result {
+  font-family: 'MedievalSharp', cursive;
+  font-size: 6em;
+  color: #fdf5e6;
+  text-shadow: 3px 3px 5px rgba(0,0,0,0.7);
+  min-height: 1em;
+}
+
+.dice-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  justify-content: center;
+}
+
+.die-button {
+  font-family: 'MedievalSharp', cursive;
+  font-size: 1.5em;
+  background-color: #fdf5e6;
+  color: #363636;
+  border: 2px solid #5d4037;
+  border-radius: 8px;
+  min-width: 60px;
+  padding: 10px;
   cursor: pointer;
-  font-size: 16px;
+  box-shadow: 3px 3px 5px rgba(0,0,0,0.4);
+  transition: all 0.1s ease-out;
 }
 
-.chat-input-form button:disabled {
-  background-color: #555;
+.die-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 5px 5px 8px rgba(0,0,0,0.4);
+}
+
+.die-button:active {
+  transform: translateY(1px);
+  box-shadow: 1px 1px 3px rgba(0,0,0,0.4);
+}
+
+.die-button:disabled {
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
-.generated-image {
-  max-width: 100%;
+/* --- NEW & IMPROVED DICE TRAY STYLES --- */
+
+.dice-tray {
+  gap: 20px; /* Space between stage and buttons */
+}
+
+/* The main area where the die appears */
+.rolling-stage {
+  flex-grow: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(0,0,0,0.2);
   border-radius: 10px;
-  margin-top: 10px;
+  cursor: pointer;
+  min-height: 150px;
+}
+.placeholder-text {
+  font-family: 'MedievalSharp', cursive;
+  font-size: 1.5em;
+  color: rgba(253, 245, 230, 0.5);
 }
 
-/* A wrapper to align the message and its actions */
-.message-wrapper {
+/* The container for the SVG die */
+.die-visual {
+  width: 120px;
+  height: 120px;
+}
+.die-visual.rolling {
+  animation: roll-animation 0.7s ease-out;
+}
+
+/* The SVG shape itself */
+.die-svg {
+  width: 100%;
+  height: 100%;
+  fill: #fdf5e6; /* Parchment color */
+  stroke: #363636; /* Ink color */
+  stroke-width: 4;
+}
+
+/* The number text inside the SVG */
+.die-text {
+  font-family: 'MedievalSharp', cursive;
+  font-size: 40px;
+  fill: #363636;
+  text-anchor: middle; /* Center the text horizontally */
+  dominant-baseline: middle; /* Center the text vertically */
+}
+
+/* Highlight the active die button */
+.die-button.active {
+  background-color: #daa520;
+  color: #363636;
+  transform: translateY(-2px);
+}
+
+/* The rolling animation */
+@keyframes roll-animation {
+  0% { transform: scale(1) rotate(0deg); }
+  25% { transform: scale(1.1) rotate(90deg); }
+  50% { transform: scale(0.9) rotate(180deg); }
+  75% { transform: scale(1.1) rotate(270deg); }
+  100% { transform: scale(1) rotate(360deg); }
+}
+
+/* --- NEW INVENTORY & MODAL STYLES --- */
+
+/* 1. New Inventory Styles */
+.inventory-grid {
   display: flex;
-  flex-direction: column;
-  max-width: 75%;
+  flex-wrap: wrap;
+  gap: 10px;
 }
-.message-wrapper.user { align-self: flex-end; }
-.message-wrapper.assistant { align-self: flex-start; }
-
-/* The actions bar itself */
-.message-actions {
-  padding-left: 10px;
-  padding-top: 5px;
-  opacity: 0; /* Hidden by default */
-  transition: opacity 0.2s ease-in-out;
-  display: flex;
-  gap: 5px;
+.inventory-item {
+  position: relative; /* Crucial for positioning the description */
+  background-color: #fdf5e6;
+  border: 2px solid #5d4037;
+  padding: 10px;
+  border-radius: 4px;
+  min-width: 60px;
+  text-align: center;
+  cursor: help;
 }
-
-/* Show the actions bar when hovering over the wrapper */
-.message-wrapper:hover .message-actions {
+.item-description {
+  visibility: hidden; /* Hidden by default */
+  opacity: 0;
+  position: absolute;
+  bottom: 100%; /* Position above the item */
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #363636;
+  color: #fdf5e6;
+  padding: 10px;
+  border-radius: 5px;
+  width: 200px;
+  z-index: 100;
+  transition: opacity 0.2s, visibility 0.2s;
+  margin-bottom: 5px;
+}
+.inventory-item:hover .item-description {
+  visibility: visible; /* Show on hover */
   opacity: 1;
 }
 
-/* The style for the small action buttons */
-.action-btn {
-  background: #444;
-  border: 1px solid #666;
-  color: #ddd;
-  border-radius: 5px;
+/* 2. Character Portrait Clickable Style */
+.char-picture.clickable {
   cursor: pointer;
-  font-size: 12px;
-  padding: 3px 8px;
-  transition: background-color 0.2s;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.char-picture.clickable:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 15px #daa520;
 }
 
-.action-btn:hover {
-  background: #555;
+/* 3. Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+.modal-content {
+  position: relative;
+  background: #fdf5e6 url('https://www.transparenttextures.com/patterns/old-parchment.png');
+  color: #363636;
+  padding: 30px;
+  border-radius: 8px;
+  border: 3px solid #5d4037;
+  max-width: 500px;
+  width: 80%;
+  box-shadow: 0 5px 25px rgba(0,0,0,0.5);
+}
+.modal-close-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 2em;
+  color: #5d4037;
+  cursor: pointer;
+}
+.modal-body {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+.modal-char-picture {
+  width: 150px;
+  height: 150px;
+  border-radius: 4px;
+  border: 3px solid #5d4037;
+  object-fit: cover;
 }

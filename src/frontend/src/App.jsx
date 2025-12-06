@@ -1,155 +1,62 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import './App.css';
+import WorldBook from './components/WorldBook';
+import PromptCorner from './components/PromptCorner';
+import CharacterSheet from './components/CharacterSheet';
+import DiceTray from './components/DiceTray';
+import CharacterModal from './components/CharacterModal';
 
-const API_URL_CHAT = "http://localhost:8000/api/chat";
-const API_URL_IMAGE = "http://localhost:8000/api/image";
+// --- MOCK DATA FOR DEMO ---
+const MOCK_AI_RESPONSE_TEXT = "The ancient city of Aeridor sleeps beneath the waves. Its once-great spires are now encrusted with coral, and schools of shimmering fish dart through the silent throne room. A faint, magical ward still pulses from the city's heart, protecting a secret lost to time.";
+const MOCK_AI_RESPONSE_IMAGE = {
+  text: "You encounter a grizzled dwarven warrior. He looks battle-worn, but his eyes are sharp.",
+  imageUrl: "https://i.imgur.com/64IuA8V.jpeg" // Our placeholder knight
+};
+// --- END MOCK DATA ---
 
 function App() {
-  const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [copiedIndex, setCopiedIndex] = useState(null);
-  const chatWindowRef = useRef(null);
+  const [bookContent, setBookContent] = useState([
+    { role: 'assistant', content: 'Welcome to ATLAS. Your story begins...' }
+  ]);
+  const [character, setCharacter] = useState({
+    name: "Lyra Swiftwind",
+    // NEW: Add a description for the character
+    description: "A nimble rogue with a quick wit and even quicker fingers. Lyra hails from the treetop city of Silverwood, but left in search of adventure and fortune after a dispute with the local thieves' guild. She trusts few, but is fiercely loyal to those who earn it.",
+    stats: { STR: 10, DEX: 18, CON: 12, INT: 14, WIS: 16, CHA: 14 },
+    picture: "https://i.imgur.com/example-character.png", // Use a real image URL here
+    // NEW: Change inventory to an array of objects
+    inventory: [
+      { name: "Dagger", description: "A simple but sharp blade, well-cared for." },
+      { name: "Thieves' Tools", description: "A set of lockpicks, wires, and small mirrors." },
+      { name: "Rope (50ft)", description: "Coiled silk rope, strong and light." },
+      { name: "Health Potion", description: "A swirling red liquid in a glass vial. Heals minor wounds." }
+    ]
+  });
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  useEffect(() => {
-    if (chatWindowRef.current) {
-      chatWindowRef.current.scrollTop = chatWindowRef.current.scrollHeight;
-    }
-  }, [messages]);
+  const handlePromptSubmit = (prompt) => {
+    // Add user's prompt to the book
+    const userEntry = { role: 'user', content: prompt };
 
-  // --- NEW: Function to handle copying text ---
-  const handleCopy = (text, index) => {
-    navigator.clipboard.writeText(text).then(() => {
-      setCopiedIndex(index);
-      setTimeout(() => setCopiedIndex(null), 2000);
-    });
-  };
+    // Simulate an AI response
+    // In a real app, this would come from an API
+    const aiEntry = prompt.toLowerCase().includes('image')
+      ? { role: 'assistant', content: MOCK_AI_RESPONSE_IMAGE.text, imageUrl: MOCK_AI_RESPONSE_IMAGE.imageUrl }
+      : { role: 'assistant', content: MOCK_AI_RESPONSE_TEXT };
 
-  // --- NEW: Function to handle downloading an image ---
-  const handleDownload = async (imageUrl) => {
-    try {
-      // Fetch the image data
-      const response = await fetch(imageUrl);
-      const blob = await response.blob();
-      
-      // Create a temporary link element to trigger the download
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = `atlas-generated-${Date.now()}.png`; // Set a filename
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(link.href); // Clean up the object URL
-    } catch (error) {
-      console.error("Failed to download image:", error);
-    }
-  };
-
-  const generateImage = async (prompt) => {
-    // ... (This function remains the same as before)
-    try {
-      const response = await fetch(API_URL_IMAGE, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt }),
-      });
-      const data = await response.json();
-      
-      setMessages(currentMessages => {
-        const lastMessage = currentMessages[currentMessages.length - 1];
-        const updatedLastMessage = { ...lastMessage, imageUrl: data.imageUrl, content: lastMessage.content.replace('[IMAGE_PROMPT]', '').trim() };
-        return [...currentMessages.slice(0, -1), updatedLastMessage];
-      });
-    } catch (error) {
-      console.error("Error generating image:", error);
-    }
-  };
-
-  const sendMessage = async (e) => {
-    // ... (This function remains the same as before)
-    e.preventDefault();
-    if (!input.trim() || isLoading) return;
-    const userMessage = { role: 'user', content: input };
-    const newMessages = [...messages, userMessage, { role: 'assistant', content: '' }];
-    setMessages(newMessages);
-    setInput('');
-    setIsLoading(true);
-    try {
-      const response = await fetch(API_URL_CHAT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [...messages, userMessage] }),
-      });
-      if (!response.body) return;
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let done = false;
-      let fullResponse = '';
-      while (!done) {
-        const { value, done: readerDone } = await reader.read();
-        done = readerDone;
-        const chunk = decoder.decode(value);
-        fullResponse += chunk;
-        setMessages(currentMessages => {
-          const lastMessage = currentMessages[currentMessages.length - 1];
-          const updatedLastMessage = { ...lastMessage, content: fullResponse };
-          return [...currentMessages.slice(0, -1), updatedLastMessage];
-        });
-      }
-      if (fullResponse.includes('[IMAGE_PROMPT]')) {
-        setMessages(currentMessages => {
-            const lastMessage = currentMessages[currentMessages.length - 1];
-            const updatedLastMessage = { ...lastMessage, content: lastMessage.content.replace('[IMAGE_PROMPT]', '\n\nGenerating image...') };
-            return [...currentMessages.slice(0, -1), updatedLastMessage];
-        });
-        const imagePrompt = fullResponse.split('[IMAGE_PROMPT]')[0].trim();
-        await generateImage(imagePrompt);
-      }
-    } catch (error) {
-      console.error("Error fetching AI response:", error);
-    } finally {
-      setIsLoading(false);
-    }
+    setBookContent(prevContent => [...prevContent, userEntry, aiEntry]);
   };
 
   return (
-    <div className="chat-container">
-      <div className="chat-window" ref={chatWindowRef}>
-        {messages.map((msg, index) => (
-          // --- UPDATED: A wrapper to hold the message and actions ---
-          <div key={index} className={`message-wrapper ${msg.role}`}>
-            <div className={`message ${msg.role}`}>
-              {msg.content && <p>{msg.content}</p>}
-              {msg.imageUrl && <img src={msg.imageUrl} alt="Generated by ATLAS" className="generated-image" />}
-            </div>
-            {/* --- NEW: The actions bar --- */}
-            {msg.role === 'assistant' && !isLoading && (msg.content || msg.imageUrl) && (
-              <div className="message-actions">
-                {msg.content && (
-                  <button onClick={() => handleCopy(msg.content, index)} className="action-btn">
-                    {copiedIndex === index ? 'Copied!' : 'Copy Text'}
-                  </button>
-                )}
-                {msg.imageUrl && (
-                  <button onClick={() => handleDownload(msg.imageUrl)} className="action-btn">
-                    Download Image
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-      <form className="chat-input-form" onSubmit={sendMessage}>
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask ATLAS for anything..."
-          disabled={isLoading}
-        />
-        <button type="submit" disabled={isLoading}>Send</button>
-      </form>
+    <div className="dm-dashboard">
+      <WorldBook content={bookContent} />
+      <PromptCorner onSubmit={handlePromptSubmit} />
+      {/* --- UPDATE THIS COMPONENT'S PROPS --- */}
+      <CharacterSheet character={character} onOpenModal={() => setIsModalOpen(true)} />
+      <DiceTray />
+
+      {/* --- ADD THIS CONDITIONAL RENDER FOR THE MODAL --- */}
+      {isModalOpen && <CharacterModal character={character} onClose={() => setIsModalOpen(false)} />}
     </div>
   );
 }
