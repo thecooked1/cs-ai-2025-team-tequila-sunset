@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { v4 as uuidv4 } from 'uuid'; // Import UUID generator
 import './App.css';
 import WorldBook from './components/WorldBook';
 import PromptCorner from './components/PromptCorner';
@@ -15,6 +16,16 @@ function App() {
   ]);
   const [isLoading, setIsLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // NEW: State for Session ID
+  const [sessionId, setSessionId] = useState(null);
+
+  // Initialize Session ID on first load
+  useEffect(() => {
+    const newSessionId = uuidv4();
+    setSessionId(newSessionId);
+    console.log("Session ID initialized:", newSessionId);
+  }, []);
 
   // Placeholder Data
   const [character, setCharacter] = useState({
@@ -26,39 +37,42 @@ function App() {
 
   // --- HELPER: Generate Image ---
   const generateImage = async (prompt) => {
+    // ... (Same as before)
     try {
-      const response = await fetch(API_URL_IMAGE, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt }),
-      });
-      const data = await response.json();
-      
-      setBookContent(currentContent => {
-        const newContent = [...currentContent];
-        const lastMsg = newContent[newContent.length - 1];
-        lastMsg.content = lastMsg.content.replace('[IMAGE_PROMPT]', '').trim();
-        lastMsg.imageUrl = data.imageUrl;
-        return newContent;
-      });
-    } catch (error) {
-      console.error("Error generating image:", error);
-    }
+        const response = await fetch(API_URL_IMAGE, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt }),
+        });
+        const data = await response.json();
+        
+        setBookContent(currentContent => {
+          const newContent = [...currentContent];
+          const lastMsg = newContent[newContent.length - 1];
+          lastMsg.content = lastMsg.content.replace('[IMAGE_PROMPT]', '').trim();
+          lastMsg.imageUrl = data.imageUrl;
+          return newContent;
+        });
+      } catch (error) {
+        console.error("Error generating image:", error);
+      }
   };
 
   // --- CORE HELPER: Stream API Response ---
-  // This function takes a list of messages and handles the streaming logic
-  const streamResponse = async (messagesToSend) => {
+  const streamResponse = async (userMessageText) => {
     setIsLoading(true);
     
-    // Add placeholder for the new response
     setBookContent(prev => [...prev, { role: 'assistant', content: '' }]);
 
     try {
       const response = await fetch(API_URL_CHAT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: messagesToSend }),
+        // UPDATED PAYLOAD: sending session_id and SINGLE message
+        body: JSON.stringify({ 
+            session_id: sessionId,
+            message: userMessageText 
+        }),
       });
 
       if (!response.body) throw new Error("No response body");
@@ -111,45 +125,31 @@ function App() {
     if (!prompt.trim() || isLoading) return;
     const userEntry = { role: 'user', content: prompt };
     
-    // Update state locally first
+    // Update UI immediately
     setBookContent(prev => [...prev, userEntry]);
     
-    // Prepare context (filter out empty/nulls)
-    const contextMessages = [...bookContent, userEntry].map(msg => ({
-        role: msg.role,
-        content: msg.content || ""
-    }));
-
-    await streamResponse(contextMessages);
+    // Call API with JUST the text
+    await streamResponse(prompt);
   };
 
   // --- HANDLER: Regenerate ---
   const handleRegenerate = async () => {
     if (isLoading || bookContent.length === 0) return;
 
-    // 1. Remove the last message (the bad AI response)
-    // We use slice(0, -1) to get everything EXCEPT the last item
-    const newHistory = bookContent.slice(0, -1);
-    
-    // 2. Reset the book content to this previous state
-    setBookContent(newHistory);
-
-    // 3. Prepare the messages for the API (cleaning up the history)
-    const contextMessages = newHistory.map(msg => ({
-        role: msg.role,
-        content: msg.content || ""
-    }));
-
-    // 4. Call the API again with the same history
-    await streamResponse(contextMessages);
+    // This is trickier with backend state.
+    // Ideally, we'd have a backend endpoint to "rollback" history.
+    // For now, we will simulate it by just re-sending the last user message?
+    // Actually, let's DISABLE regenerate for this specific architectural step 
+    // to keep it simple, or implement a backend rollback later.
+    alert("Regenerate is temporarily disabled while we upgrade the memory system!");
   };
 
   return (
     <div className="dm-dashboard">
       <WorldBook 
         content={bookContent} 
-        onRegenerate={handleRegenerate} // Pass the function down
-        isLoading={isLoading}           // Pass loading state
+        onRegenerate={handleRegenerate} 
+        isLoading={isLoading}           
       />
       <PromptCorner onSubmit={handlePromptSubmit} isLoading={isLoading} />
       <CharacterSheet character={character} onOpenModal={() => setIsModalOpen(true)} />
