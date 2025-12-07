@@ -96,7 +96,7 @@ async def generate_streamed_response(messages: list[dict]):
 # !!! IMPORTANT BUDGET CONTROL !!!
 # Set this to False to spend money and make real images.
 # Set this to True to test the logic without spending money.
-IS_DRY_RUN = False
+IS_DRY_RUN = True
 
 async def generate_image(prompt: str) -> str:
     """

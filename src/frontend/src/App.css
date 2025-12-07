@@ -439,3 +439,32 @@ body {
   border: 2px solid #5c4033; /* Dark brown border for that "book" feel */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
+
+/* --- WorldBook Action Buttons --- */
+
+.entry-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+  opacity: 0.4; /* Subtle by default */
+  transition: opacity 0.2s;
+}
+
+.book-entry:hover .entry-actions {
+  opacity: 1; /* Fully visible on hover */
+}
+
+.action-btn {
+  background: transparent;
+  border: 1px solid #8b4513; /* SaddleBrown */
+  color: #5c4033; /* Dark brown */
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  font-family: serif; /* Keep the medieval vibe */
+  cursor: pointer;
+}
+
+.action-btn:hover {
+  background: #f4e4bc; /* Light parchment color */
+}

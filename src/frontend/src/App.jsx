@@ -6,29 +6,22 @@ import CharacterSheet from './components/CharacterSheet';
 import DiceTray from './components/DiceTray';
 import CharacterModal from './components/CharacterModal';
 
-// API Configuration
 const API_URL_CHAT = "http://localhost:8000/api/chat";
 const API_URL_IMAGE = "http://localhost:8000/api/image";
 
 function App() {
-  // State for the conversation history
   const [bookContent, setBookContent] = useState([
     { role: 'assistant', content: 'Welcome to ATLAS. I am the First Narrator. What world shall we build today?' }
   ]);
-  
-  // State for UI (Loading, Modal, etc)
   const [isLoading, setIsLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Placeholder Character Data (You can connect this to AI later!)
+  // Placeholder Data
   const [character, setCharacter] = useState({
     name: "Lyra Swiftwind",
-    description: "A nimble rogue with a quick wit...",
+    description: "A nimble rogue...",
     stats: { STR: 10, DEX: 18, CON: 12, INT: 14, WIS: 16, CHA: 14 },
-    inventory: [
-      { name: "Dagger", description: "Sharp and reliable." },
-      { name: "Rope", description: "50ft of silk rope." }
-    ]
+    inventory: [{ name: "Dagger", description: "Sharp." }]
   });
 
   // --- HELPER: Generate Image ---
@@ -41,51 +34,35 @@ function App() {
       });
       const data = await response.json();
       
-      // Update the last message to include the image URL
       setBookContent(currentContent => {
         const newContent = [...currentContent];
         const lastMsg = newContent[newContent.length - 1];
-        // Remove the prompt tag and add the image URL
         lastMsg.content = lastMsg.content.replace('[IMAGE_PROMPT]', '').trim();
         lastMsg.imageUrl = data.imageUrl;
         return newContent;
       });
-
     } catch (error) {
       console.error("Error generating image:", error);
     }
   };
 
-  // --- MAIN FUNCTION: Handle User Input ---
-  const handlePromptSubmit = async (prompt) => {
-    if (!prompt.trim() || isLoading) return;
-
-    // 1. Add User Message immediately
-    const userEntry = { role: 'user', content: prompt };
-    // 2. Add Placeholder Assistant Message (empty for now)
-    const placeholderEntry = { role: 'assistant', content: '' };
-    
-    // Update state with both
-    setBookContent(prev => [...prev, userEntry, placeholderEntry]);
+  // --- CORE HELPER: Stream API Response ---
+  // This function takes a list of messages and handles the streaming logic
+  const streamResponse = async (messagesToSend) => {
     setIsLoading(true);
+    
+    // Add placeholder for the new response
+    setBookContent(prev => [...prev, { role: 'assistant', content: '' }]);
 
     try {
-      // 3. Make the API Call to Backend
-      // Note: We filter out the last empty placeholder before sending context
-      const contextMessages = [...bookContent, userEntry].map(msg => ({
-        role: msg.role,
-        content: msg.content || "" // Ensure content isn't null
-      }));
-
       const response = await fetch(API_URL_CHAT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: contextMessages }),
+        body: JSON.stringify({ messages: messagesToSend }),
       });
 
       if (!response.body) throw new Error("No response body");
 
-      // 4. Handle Streaming Response
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let done = false;
@@ -97,7 +74,6 @@ function App() {
         const chunk = decoder.decode(value, { stream: true });
         fullResponse += chunk;
 
-        // Update the last message (the placeholder) with the new chunk
         setBookContent(currentContent => {
           const newContent = [...currentContent];
           const lastMsg = newContent[newContent.length - 1];
@@ -106,17 +82,13 @@ function App() {
         });
       }
 
-      // 5. Check for Image Prompt Tag
       if (fullResponse.includes('[IMAGE_PROMPT]')) {
-        // Show temporary status
         setBookContent(currentContent => {
             const newContent = [...currentContent];
             const lastMsg = newContent[newContent.length - 1];
             lastMsg.content = lastMsg.content.replace('[IMAGE_PROMPT]', '\n\n*Summoning image...*');
             return newContent;
         });
-        
-        // Extract prompt and call image API
         const imagePrompt = fullResponse.split('[IMAGE_PROMPT]')[0].trim();
         await generateImage(imagePrompt);
       }
@@ -126,7 +98,7 @@ function App() {
       setBookContent(prev => {
         const newContent = [...prev];
         const lastMsg = newContent[newContent.length - 1];
-        lastMsg.content += "\n\n[System Error: Connection to ATLAS lost.]";
+        lastMsg.content += "\n\n[Connection lost.]";
         return newContent;
       });
     } finally {
@@ -134,15 +106,52 @@ function App() {
     }
   };
 
+  // --- HANDLER: User Submit ---
+  const handlePromptSubmit = async (prompt) => {
+    if (!prompt.trim() || isLoading) return;
+    const userEntry = { role: 'user', content: prompt };
+    
+    // Update state locally first
+    setBookContent(prev => [...prev, userEntry]);
+    
+    // Prepare context (filter out empty/nulls)
+    const contextMessages = [...bookContent, userEntry].map(msg => ({
+        role: msg.role,
+        content: msg.content || ""
+    }));
+
+    await streamResponse(contextMessages);
+  };
+
+  // --- HANDLER: Regenerate ---
+  const handleRegenerate = async () => {
+    if (isLoading || bookContent.length === 0) return;
+
+    // 1. Remove the last message (the bad AI response)
+    // We use slice(0, -1) to get everything EXCEPT the last item
+    const newHistory = bookContent.slice(0, -1);
+    
+    // 2. Reset the book content to this previous state
+    setBookContent(newHistory);
+
+    // 3. Prepare the messages for the API (cleaning up the history)
+    const contextMessages = newHistory.map(msg => ({
+        role: msg.role,
+        content: msg.content || ""
+    }));
+
+    // 4. Call the API again with the same history
+    await streamResponse(contextMessages);
+  };
+
   return (
     <div className="dm-dashboard">
-      {/* Pass the dynamic content to the WorldBook */}
-      <WorldBook content={bookContent} />
-      
-      {/* Pass the API handler to the PromptCorner */}
+      <WorldBook 
+        content={bookContent} 
+        onRegenerate={handleRegenerate} // Pass the function down
+        isLoading={isLoading}           // Pass loading state
+      />
       <PromptCorner onSubmit={handlePromptSubmit} isLoading={isLoading} />
-      
-      {/* Keep the other UI components */}
       <CharacterSheet character={character} onOpenModal={() => setIsModalOpen(true)} />
       <DiceTray />
       {isModalOpen && <CharacterModal character={character} onClose={() => setIsModalOpen(false)} />}
