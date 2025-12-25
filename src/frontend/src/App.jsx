@@ -6,11 +6,13 @@ import PromptCorner from './components/PromptCorner';
 import CharacterSheet from './components/CharacterSheet';
 import DiceTray from './components/DiceTray';
 import CharacterModal from './components/CharacterModal';
+import CharacterCreator from './components/CharacterCreator';
 
 const API_URL_CHAT = "http://localhost:8000/api/chat";
 const API_URL_IMAGE = "http://localhost:8000/api/image";
 
 function App() {
+  const [character, setCharacter] = useState(null); 
   const [bookContent, setBookContent] = useState([
     { role: 'assistant', content: 'Welcome to ATLAS. I am the First Narrator. What world shall we build today?' }
   ]);
@@ -27,13 +29,18 @@ function App() {
     console.log("Session ID initialized:", newSessionId);
   }, []);
 
-  // Placeholder Data
-  const [character, setCharacter] = useState({
-    name: "Lyra Swiftwind",
-    description: "A nimble rogue...",
-    stats: { STR: 10, DEX: 18, CON: 12, INT: 14, WIS: 16, CHA: 14 },
-    inventory: [{ name: "Dagger", description: "Sharp." }]
-  });
+  const handleCharacterCreated = (newCharData) => {
+    console.log("CHARACTER DATA RECEIVED:", newCharData);
+    setCharacter(newCharData);
+    
+    // Set the initial welcome message dynamically
+    setBookContent([
+      { 
+        role: 'assistant', 
+        content: `**Welcome, ${newCharData.name}.**\n\n${newCharData.description}\n\nThe world awaits. What do you do?` 
+      }
+    ]);
+  };  
 
   // --- HELPER: Generate Image ---
   const generateImage = async (prompt) => {
@@ -236,6 +243,14 @@ function App() {
     // to keep it simple, or implement a backend rollback later.
     alert("Regenerate is temporarily disabled while we upgrade the memory system!");
   };
+
+  // --- RENDER ---
+  
+  // 1. If no character, show Creator
+  if (!character) {
+    return <CharacterCreator onCreate={handleCharacterCreated} />;
+  }
+
 
   return (
     <div className="dm-dashboard">

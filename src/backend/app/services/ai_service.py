@@ -181,7 +181,7 @@ async def generate_streamed_response(messages: list[dict], character: Character 
 # !!! IMPORTANT BUDGET CONTROL !!!
 # Set this to False to spend money and make real images.
 # Set this to True to test the logic without spending money.
-IS_DRY_RUN = False
+IS_DRY_RUN = True
 
 async def generate_image(prompt: str) -> str:
     """
@@ -192,7 +192,7 @@ async def generate_image(prompt: str) -> str:
         print("--- IMAGE GENERATION DRY RUN ---")
         print(f"Prompt: {prompt}")
         # Return a placeholder image URL for testing
-        return "https://imgur.com/gallery/astley-rick-astley-miWJd" # A placeholder fantasy image
+        return "https://i.imgur.com/miWJd.jpeg" # A placeholder fantasy image
 
     print("--- IMAGE GENERATION LIVE RUN (COSTING $0.04) ---")
     try:
