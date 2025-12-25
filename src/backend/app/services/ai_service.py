@@ -38,6 +38,10 @@ You have access to the player's CURRENT CHARACTER SHEET below. You must arbitrat
    - Example: You open the chest and find a potion. [ADD_ITEM: {"name": "Potion of Healing", "description": "Restores 2d4+2 HP"}]
    - ONLY use this tag if the player explicitly takes or receives the item.
 
+4. **ITEM REMOVAL:**
+   - If the player consumes (potions), sells, gives away, or loses an item, output: [REMOVE_ITEM: "Item Name"]
+   - The name must match the name on their sheet EXACTLY.
+   - Example: You drink the potion. [REMOVE_ITEM: "Potion of Healing"]
 
 ### DATA SOURCE INSTRUCTIONS (CRITICAL) ###
 I have provided the player's current data below wrapped in <character_sheet> tags.

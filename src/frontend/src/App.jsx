@@ -160,6 +160,46 @@ function App() {
         }
       }
 
+      // --- NEW: REMOVE ITEM LOGIC ---
+      // Regex to capture [REMOVE_ITEM: "Item Name"]
+      const removeRegex = /\[REMOVE_ITEM:\s*"(.*?)"\]/g;
+      let removeMatch;
+
+      while ((removeMatch = removeRegex.exec(fullResponse)) !== null) {
+        // Capture variables immediately to prevent async bugs
+        const tagToReplace = removeMatch[0]; // e.g. [REMOVE_ITEM: "Dagger"]
+        const itemNameToRemove = removeMatch[1]; // e.g. Dagger
+
+        try {
+          // 1. Clean the tag out of the visible chat text
+          setBookContent(currentContent => {
+            const newContent = [...currentContent];
+            const lastMsg = newContent[newContent.length - 1];
+            
+            if (lastMsg.content.includes(tagToReplace)) {
+                lastMsg.content = lastMsg.content.replace(tagToReplace, '').trim();
+                // Add a visual cue
+                lastMsg.content += `\n\n*Item Removed: ${itemNameToRemove}*`;
+            }
+            return newContent;
+          });
+
+          // 2. Update the Character State (Filter it out)
+          setCharacter(prevChar => {
+            return {
+                ...prevChar,
+                // Keep only items that DO NOT match the name
+                inventory: prevChar.inventory.filter(item => item.name !== itemNameToRemove)
+            };
+          });
+
+          console.log("Removed item from inventory:", itemNameToRemove);
+
+        } catch (e) {
+          console.error("Failed to process item removal:", e);
+        }
+      }
+
     } catch (error) {
       console.error("Error:", error);
       setBookContent(prev => {
