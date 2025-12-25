@@ -536,3 +536,29 @@ body {
   margin-bottom: 15px;
 }
 
+/* Level Up Animation */
+.levelup-overlay {
+  position: fixed;  
+  top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none; /* Let clicks pass through */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 3000;
+  background: rgba(212, 175, 55, 0.1); /* Slight gold tint */
+}
+
+.levelup-text {
+  font-size: 5rem;
+  font-family: serif;
+  font-weight: bold;
+  color: #d4af37;
+  text-shadow: 0 0 20px #000;
+  animation: levelUpPop 3s ease-out forwards;
+}
+
+@keyframes levelUpPop {
+  0% { transform: scale(0.5); opacity: 0; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 0; }
+}
