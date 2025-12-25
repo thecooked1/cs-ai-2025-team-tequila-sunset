@@ -11,6 +11,7 @@ async def handle_chat_request(request: ChatRequest):
     # 1. Extract data from the new request format
     session_id = request.session_id
     user_input = request.message
+    character_data = request.character
 
     # 2. Get current history from our new Session Service
     # (This works because we are now storing state in the backend!)
@@ -27,7 +28,7 @@ async def handle_chat_request(request: ChatRequest):
     async def stream_and_save():
         full_ai_response = ""
         # Stream chunks to the client
-        async for chunk in generate_streamed_response(full_context):
+        async for chunk in generate_streamed_response(full_context, character_data):
             full_ai_response += chunk
             yield chunk
         
@@ -39,3 +40,8 @@ async def handle_chat_request(request: ChatRequest):
         stream_and_save(), 
         media_type="text/event-stream"
     )
+
+@router.delete("/chat/{session_id}")
+async def clear_session(session_id: str):
+    session_service.clear_history(session_id)
+    return {"message": "Session history cleared", "session_id": session_id}

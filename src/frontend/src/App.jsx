@@ -64,6 +64,13 @@ function App() {
     
     setBookContent(prev => [...prev, { role: 'assistant', content: '' }]);
 
+        // --- DEBUG CHECK ---
+    console.log("SENDING TO BACKEND:", { 
+        session_id: sessionId,
+        message: userMessageText,
+        character: character // <--- Is this populated?
+    });
+
     try {
       const response = await fetch(API_URL_CHAT, {
         method: 'POST',
@@ -71,7 +78,8 @@ function App() {
         // UPDATED PAYLOAD: sending session_id and SINGLE message
         body: JSON.stringify({ 
             session_id: sessionId,
-            message: userMessageText 
+            message: userMessageText,
+            character: character
         }),
       });
 
