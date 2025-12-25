@@ -115,6 +115,51 @@ function App() {
         await generateImage(imagePrompt);
       }
 
+// --- NEW: ITEM LOGIC (Fixed) ---
+      // Regex to find all occurrences of [ADD_ITEM: {json}]
+      const itemRegex = /\[ADD_ITEM:\s*({.*?})\]/g;
+      let match;
+      
+      while ((match = itemRegex.exec(fullResponse)) !== null) {
+        // CRITICAL FIX: Capture the strings NOW before the loop continues
+        const tagToReplace = match[0]; // The full "[ADD_ITEM...]" string
+        const jsonString = match[1];   // The "{...}" string inside
+
+        try {
+          const newItem = JSON.parse(jsonString);
+
+          // 1. Clean the tag out of the visible chat text
+          setBookContent(currentContent => {
+            const newContent = [...currentContent];
+            const lastMsg = newContent[newContent.length - 1];
+            
+            // Use the CAPTURED variable 'tagToReplace', not 'match[0]'
+            if (lastMsg.content.includes(tagToReplace)) {
+                lastMsg.content = lastMsg.content.replace(tagToReplace, '').trim();
+                lastMsg.content += `\n\n*Item Acquired: ${newItem.name}*`;
+            }
+            return newContent;
+          });
+
+          // 2. Update the Character State
+          setCharacter(prevChar => {
+            // Check if we already added this item to avoid duplicates in strict React mode
+            const exists = prevChar.inventory.some(i => i.name === newItem.name);
+            if (exists) return prevChar;
+
+            return {
+                ...prevChar,
+                inventory: [...prevChar.inventory, newItem]
+            };
+          });
+
+          console.log("Added item to inventory:", newItem);
+
+        } catch (e) {
+          console.error("Failed to parse item JSON:", e);
+        }
+      }
+
     } catch (error) {
       console.error("Error:", error);
       setBookContent(prev => {
