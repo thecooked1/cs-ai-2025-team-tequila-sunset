@@ -19,9 +19,15 @@ class InventoryItem(BaseModel):
 
 class Character(BaseModel):
     name: str
+    class_name: str  # <--- NEW
+    level: int = 1   # <--- NEW (Default to 1)
     description: str
     stats: CharacterStats
     inventory: List[InventoryItem]
+    # We will add picture_url on the frontend side or backend response wrapper, 
+    # but the core character logic usually just needs data. 
+    # Let's add it here to be safe.
+    picture_url: Optional[str] = None 
 
 # --- 1. The New Session-Based Chat Request ---
 class ChatRequest(BaseModel):
@@ -32,3 +38,6 @@ class ChatRequest(BaseModel):
 # --- 2. The Image Request (Restored) ---
 class ImageRequest(BaseModel):
     prompt: str
+
+class CreateCharacterRequest(BaseModel):
+    user_prompt: str # e.g. "A strong orc barbarian"
