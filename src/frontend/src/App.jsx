@@ -18,6 +18,7 @@ function App() {
   ]);
   const [isLoading, setIsLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showLevelUp, setShowLevelUp] = useState(false);
   
   // NEW: State for Session ID
   const [sessionId, setSessionId] = useState(null);
@@ -97,6 +98,8 @@ function App() {
       let done = false;
       let fullResponse = '';
 
+      let hasLeveledUp = false; 
+
       while (!done) {
         const { value, done: readerDone } = await reader.read();
         done = readerDone;
@@ -122,7 +125,7 @@ function App() {
         await generateImage(imagePrompt);
       }
 
-// --- NEW: ITEM LOGIC (Fixed) ---
+      // --- NEW: ITEM LOGIC (Fixed) ---
       // Regex to find all occurrences of [ADD_ITEM: {json}]
       const itemRegex = /\[ADD_ITEM:\s*({.*?})\]/g;
       let match;
@@ -207,6 +210,93 @@ function App() {
         }
       }
 
+      // --- NEW: LEVEL UP LOGIC ---
+      if (fullResponse.includes('[LEVEL_UP]') && !hasLeveledUp) {
+
+        hasLeveledUp = true;
+        
+        setBookContent(currentContent => {
+            const newContent = [...currentContent];
+            const lastMsg = newContent[newContent.length - 1];
+            // Remove tag and add visual text
+            if (lastMsg.content.includes('[LEVEL_UP]')) {
+                lastMsg.content = lastMsg.content.replace('[LEVEL_UP]', '').trim();
+                lastMsg.content += `\n\n**✨ LEVEL UP! You feel your power grow. ✨**`;
+            }
+            return newContent;
+        });
+
+        setShowLevelUp(true);
+        setTimeout(() => setShowLevelUp(false), 4000); // Hide after 4 seconds
+
+        // Update the character state
+        setCharacter(prev => ({
+            ...prev,
+            level: (prev.level || 1) + 1
+        }));
+        
+        // Optional: You could trigger a confetti effect here!
+        console.log("Level Up Triggered!");
+      }
+
+      // --- NEW: STAT UPDATE LOGIC ---
+      // Regex: [UPDATE_STATS: {"STR": 18, "HP": 20}]
+      const statsRegex = /\[UPDATE_STATS:\s*({.*?})\]/g;
+      let statMatch;
+
+      while ((statMatch = statsRegex.exec(fullResponse)) !== null) {
+        const tagToReplace = statMatch[0];
+        const jsonString = statMatch[1];
+
+        try {
+          const statsToUpdate = JSON.parse(jsonString);
+
+          // 1. Clean UI
+          setBookContent(currentContent => {
+            const newContent = [...currentContent];
+            const lastMsg = newContent[newContent.length - 1];
+            if (lastMsg.content.includes(tagToReplace)) {
+                lastMsg.content = lastMsg.content.replace(tagToReplace, '').trim();
+
+                // Create a readable string like "STR increased to 16"
+                const changes = Object.entries(statsToUpdate)
+                    .map(([key, val]) => `**${key}** increased to **${val}**`)
+                    .join(", ");
+                
+                lastMsg.content += `\n\n📈 *Stat Update: ${changes}*`;
+
+            }
+            return newContent;
+          });
+
+          // 2. Update Character Sheet
+          setCharacter(prev => {
+            // We need to handle stats (STR, DEX) inside the 'stats' object,
+            // and top-level props like 'HP' or 'AC' (if you have them) separately.
+            const newStats = { ...prev.stats };
+            const newTopLevel = { ...prev };
+
+            for (const [key, value] of Object.entries(statsToUpdate)) {
+                // If it's one of the 6 main stats
+                if (["STR","DEX","CON","INT","WIS","CHA"].includes(key)) {
+                    newStats[key] = value;
+                } else {
+                    // Otherwise assume it's a top level prop (like HP if you add it later)
+                    newTopLevel[key] = value;
+                }
+            }
+
+            return {
+                ...newTopLevel,
+                stats: newStats
+            };
+          });
+
+        } catch (e) {
+          console.error("Failed to update stats:", e);
+        }
+      }
+
     } catch (error) {
       console.error("Error:", error);
       setBookContent(prev => {
@@ -219,6 +309,8 @@ function App() {
       setIsLoading(false);
     }
   };
+
+
 
   // --- HANDLER: User Submit ---
   const handlePromptSubmit = async (prompt) => {
@@ -263,6 +355,11 @@ function App() {
       <CharacterSheet character={character} onOpenModal={() => setIsModalOpen(true)} />
       <DiceTray />
       {isModalOpen && <CharacterModal character={character} onClose={() => setIsModalOpen(false)} />}
+      {showLevelUp && (
+        <div className="levelup-overlay">
+          <div className="levelup-text">LEVEL UP!</div>
+        </div>
+      )}
     </div>
   );
 }
